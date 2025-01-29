@@ -1,10 +1,13 @@
 import { NextFunction, Request, Response } from "express";
 import { GoogleAuthProvider } from "firebase/auth";
 import admin from "firebase-admin";
+import db from "./db"
 const provider = new GoogleAuthProvider();
 
 export const authMiddleWare = async (req: Request, res: Response, next: NextFunction) => {
 
+
+    
     const idToken = req.headers.authorization?.split("Bearer ")[1] || req.body.idToken;
 
     if (!idToken) {

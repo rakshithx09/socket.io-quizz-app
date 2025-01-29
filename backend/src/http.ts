@@ -2,6 +2,7 @@ import { Express } from "express";
 import express from "express";
 import { authMiddleWare } from "./auth";
 import cors from "cors";
+import db from "./db"
 
 export function initHttp(app: Express) {
     app.use(express.json());
