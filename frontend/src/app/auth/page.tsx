@@ -1,24 +1,47 @@
 "use client"
-import { signInWithPopup } from "firebase/auth";
+import { signInWithPopup, signOut } from "firebase/auth";
 import { auth, provider } from "../../utils/firebase.config";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function SignIn() {
-    const [value, setValue] = useState('');
+    const [token, setToken] = useState("");
     const router = useRouter()
-    const handleClick = async ()=> {
+    const handleSignIn = async () => {
         signInWithPopup(auth, provider).then(async (data) => {
-            setValue(data.user.email as string);
+            const token = await data.user.getIdToken()
             localStorage.setItem("email", data.user.email as string);
-            localStorage.setItem("token", await data.user.getIdToken());
+            localStorage.setItem("token", token );
+            setToken(token)
             router.push('/')
         })
 
     }
+    const handleSignOut = async () => {
+        signOut(auth).then(() => {
+            localStorage.removeItem("token")
+            setToken("")
+            console.log("Signed out succesfully")
+        }).catch((error) => {
+            console.error(error)
+        });
+
+    }
+    useEffect(() => {
+        const tokenFromLocalStorage = localStorage.getItem("token");
+        /* console.log("token" , tokenFromLocalStorage) */
+        if (tokenFromLocalStorage) {
+            setToken(tokenFromLocalStorage)
+        }
+    }, [token])
+    /* console.log("state token" ,token) */
     return (
         <div>
-            <button onClick={handleClick}>Sign in with google</button>
+            {
+                token.length!=0 ?
+                    <button onClick={handleSignOut}>Sign out </button> : <button onClick={handleSignIn}>Sign in with google</button>
+            }
+
         </div>
     )
 }

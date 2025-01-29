@@ -11,16 +11,24 @@ export const authMiddleWare = async (req: Request, res: Response, next: NextFunc
         res.status(401).json({ success: false, error: "unauthrozied, no token provided" });
     }
 
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
-    console.log("service acc", serviceAccount)
-    if (!serviceAccount) {
-        throw new Error("cant fetch FIREBASE_SERVICE_ACCOUNT from env or its not defined");
+    try {
+        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
+
+        if (!serviceAccount) {
+            throw new Error("cant fetch FIREBASE_SERVICE_ACCOUNT from env or its not defined");
+        }
+        if (!admin.apps.length) {
+            admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount),
+            });
+        }
+    } catch (error) {
+        console.error("Couldnt parse serviceAccount json", error)
     }
-    console.log("before init")
-    admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-    });
-    console.log("after init")
+
+
+
+
     try {
         const decodedToken = await admin.auth().verifyIdToken(idToken);
         console.log("Middle ware: token verified succesfully")
