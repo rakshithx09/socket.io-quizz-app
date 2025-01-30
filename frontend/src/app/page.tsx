@@ -1,28 +1,28 @@
 "use client";
-
 import { Box, Button, Container, TextField, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { createQuiz, joinQuiz } from "./lib/quiz";
 import { useRouter } from "next/navigation";
-
-export const API_URL = "http://localhost:3001"; 
+import useStore from "./store/quizStore";
+export const API_URL = "http://localhost:3001";
 
 const randomGenerator = () => Math.floor(10000 + Math.random() * 90000).toString();
 
 export default function Home() {
-  const [quizCode, setQuizCode] = useState(""); 
+  const [quizCode, setQuizCode] = useState("");
   const [isCreating, setIsCreating] = useState(true);
-  const [hydrated, setHydrated] = useState(false); 
+  const [hydrated, setHydrated] = useState(false);
   const router = useRouter();
+  const { setQuiz } = useStore();
   useEffect(() => {
     setHydrated(true);
-    setQuizCode(randomGenerator()); 
+    setQuizCode(randomGenerator());
   }, []);
 
   const toggle = () => {
     setIsCreating((prev) => !prev);
-    setQuizCode(!isCreating ? randomGenerator() : ""); 
-  }; 
+    setQuizCode(!isCreating ? randomGenerator() : "");
+  };
   if (!hydrated) return null;
 
   return (
@@ -72,7 +72,7 @@ export default function Home() {
           variant="contained"
           color="primary"
           fullWidth
-          onClick={isCreating ?()=> createQuiz(quizCode, router) : ()=>joinQuiz(quizCode)}
+          onClick={isCreating ? () => createQuiz(quizCode, router, setQuiz) : () => joinQuiz(quizCode, router)}
         >
           {isCreating ? "start Quiz" : "join Quiz"}
         </Button>

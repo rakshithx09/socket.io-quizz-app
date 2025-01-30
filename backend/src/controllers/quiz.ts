@@ -24,19 +24,101 @@ export const createQuizHandler = async (req: AuthenticatedRequest, res: Response
                 },
             });
         } else {
-            createdUser = existingUser;  
+            createdUser = existingUser;
         }
+
         const createdQuiz = await db.quiz.create({
             data: {
                 hostId: user.uid,
                 quizCode,
             },
         });
-        console.log("quiz created succesfully", createdQuiz)
 
-        res.json({ success: true, message: "Quiz created", quiz: createdQuiz, user: createdUser });
+        await db.quizSession.create({
+            data: {
+                userId: createdUser.id,
+                quizId: createdQuiz.id,
+                score: 0,
+            }
+        });
+
+        console.log("quiz created successfully", createdQuiz);
+
+        res.json({ success: true, message: "quiz created", quiz: createdQuiz, user: createdUser });
     } catch (error) {
-        console.error("Error creating quiz or user:", error.message);
+        console.error("errr creating quiz or user:", error.message);
+        res.status(500).json({ success: false, message: "server error" });
+    }
+};
+
+export const joinQuizHandler = async (req: AuthenticatedRequest, res: Response) => {
+    console.log("joinQuizHandler triggered ")
+    const { quizCode } = req.body;
+    const user = req.user;
+
+    try {
+        if (!quizCode) {
+            throw new Error("quizCode is not sent in body")
+        }
+        if (!user?.uid) {
+            throw new Error("user doesnt have uid");
+        }
+
+        const quiz = await db.quiz.findUnique({
+            where: { quizCode },
+        });
+
+        if (!quiz) {
+            res.status(404).json({ success: false, message: "quiz not found" });
+            return;
+        }
+
+        const existingSession = await db.quizSession.findFirst({
+            where: {
+                quizId: quiz.id,
+                userId: user.id,
+            },
+        });
+        if (quiz.state == 'active') {
+            if (existingSession) {
+                res.status(200).json({ success: true, message: "user joined quiz succesfully",session: existingSession, quiz });
+                return;
+            }
+        }else{
+            res.status(400).json({ success: false, message: "Quiz has already ended" });
+                return;
+        }
+
+        const existingUser = await db.user.findUnique({
+            where: { firebaseUid: user.uid },
+        });
+
+        let createdUser;
+        if (!existingUser) {
+            createdUser = await db.user.create({
+                data: {
+                    firebaseUid: user.uid,
+                    email: user.email!,
+                },
+            });
+        } else {
+            createdUser = existingUser;
+        }
+
+        const createdSession = await db.quizSession.create({
+            data: {
+                userId: createdUser.id,
+                quizId: quiz.id,
+                score: 0,
+            }
+        });
+
+        console.log("user joined quiz successfully", createdSession);
+
+        res.json({ success: true, message: "user joined the quiz", session: createdSession, quiz });
+        return;
+    } catch (error) {
+        console.error("error joining quiz:", error.message);
         res.status(500).json({ success: false, message: "Server error" });
     }
 };

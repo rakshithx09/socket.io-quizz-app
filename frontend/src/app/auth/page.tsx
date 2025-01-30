@@ -10,7 +10,7 @@ export default function SignIn() {
     const handleSignIn = async () => {
         signInWithPopup(auth, provider).then(async (data) => {
             const token = await data.user.getIdToken()
-            localStorage.setItem("email", data.user.email as string);
+            localStorage.setItem("email", data.user.uid as string);
             localStorage.setItem("token", token );
             setToken(token)
             router.push('/')

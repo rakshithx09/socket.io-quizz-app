@@ -23,7 +23,7 @@ model Quiz {
   quizCode     String        @unique
   questions    Question[]
   quizSessions QuizSession[]
-
+  state        QuizState     @default(active)
   createdAt DateTime @default(now())
 }
 
@@ -45,4 +45,10 @@ model QuizSession {
   score     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+
+enum QuizState {
+  active
+  ended
 }
