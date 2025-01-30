@@ -1,12 +1,17 @@
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, request, Request, Response } from "express";
 import { GoogleAuthProvider } from "firebase/auth";
 import admin from "firebase-admin";
 import db from "./db"
+import { DecodedIdToken } from "firebase-admin/lib/auth/token-verifier";
 const provider = new GoogleAuthProvider();
+
+export interface AuthenticatedRequest extends Request {
+    user?: DecodedIdToken; 
+  }
 
 export const authMiddleWare = async (req: Request, res: Response, next: NextFunction) => {
 
-
+    console.log("From middleware")
     
     const idToken = req.headers.authorization?.split("Bearer ")[1] || req.body.idToken;
 

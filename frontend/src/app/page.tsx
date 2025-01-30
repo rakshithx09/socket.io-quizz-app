@@ -1,62 +1,29 @@
-"use client"
+"use client";
 
 import { Box, Button, Container, TextField, Typography } from "@mui/material";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
-import useStore from "./store/quizStore";
-import { io } from "socket.io-client";
+import { useEffect, useState } from "react";
+import { createQuiz, joinQuiz } from "./lib/quiz";
+import { useRouter } from "next/navigation";
 
-const fetchData = async (setResponse: Dispatch<SetStateAction<string>>) => {
-  const response = await fetch("http://localhost:3001/", {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    }
-  });
-  const data = await response.json();
-  setResponse(JSON.stringify(data));
-}
+export const API_URL = "http://localhost:3001"; 
+
+const randomGenerator = () => Math.floor(10000 + Math.random() * 90000).toString();
 
 export default function Home() {
-  const [quizCode, setQuizCode] = useState("");
-  const [customCode, setCustomCode] = useState('');
+  const [quizCode, setQuizCode] = useState(""); 
   const [isCreating, setIsCreating] = useState(true);
-
-  const { socket, setSocket } = useStore();
-
-  const randomGenerator = () => {
-    return Math.floor(10000 + Math.random() * 90000).toString();
-  };
+  const [hydrated, setHydrated] = useState(false); 
+  const router = useRouter();
+  useEffect(() => {
+    setHydrated(true);
+    setQuizCode(randomGenerator()); 
+  }, []);
 
   const toggle = () => {
-    setIsCreating((prev)=>  !prev);
-    if(isCreating){
-      setQuizCode(randomGenerator());
-    }
-    
-  };
-
-  const enterQuiz = (quizCode) => {
-    if (!socket) {
-      console.log("before connect")
-      const socket = io(`ws://localhost:3003?quizCode=${quizCode}`);
-      setSocket(socket);
-    }
-  }
-
-  const inputHandler = (e) => {
-    setQuizCode(e.target.value);
-  };
-
-  useEffect(() => {
-    /* fetchData(setResponse);  */
-    setQuizCode(randomGenerator())
-    return () => {
-      if (socket) {
-        socket.disconnect();
-      }
-    };
-  }, [socket])
+    setIsCreating((prev) => !prev);
+    setQuizCode(!isCreating ? randomGenerator() : ""); 
+  }; 
+  if (!hydrated) return null;
 
   return (
     <Container maxWidth="sm">
@@ -74,20 +41,19 @@ export default function Home() {
         }}
       >
         <Typography variant="h4" gutterBottom>
-          {isCreating ? "Create Quiz" : "Join Quiz"}
+          {isCreating ? "create Quiz" : "join Quiz"}
         </Typography>
 
         <TextField
-          label="Quiz Code"
+          label="quiz Code"
           variant="outlined"
-          value={isCreating ? quizCode : customCode}
-          onChange={inputHandler}
+          value={quizCode}
+          onChange={(e) => setQuizCode(e.target.value)}
           fullWidth
-          /* disabled={isCreating ? false : true}  */
           sx={{
             marginBottom: 2,
             backgroundColor: "white",
-            borderRadius: "15px"
+            borderRadius: "15px",
           }}
         />
 
@@ -99,17 +65,16 @@ export default function Home() {
             fontStyle: "italic",
           }}
         >
-          {isCreating ? "Join Quiz" : "Create Quiz"}
+          {isCreating ? "join Quiz" : "create Quiz"}
         </p>
-
 
         <Button
           variant="contained"
           color="primary"
           fullWidth
-          onClick={() =>{console.log("quiz code: ", quizCode); enterQuiz(quizCode); return;}}
+          onClick={isCreating ?()=> createQuiz(quizCode, router) : ()=>joinQuiz(quizCode)}
         >
-          {isCreating ? "Start Quiz" : "Join Quiz"}
+          {isCreating ? "start Quiz" : "join Quiz"}
         </Button>
       </Box>
     </Container>

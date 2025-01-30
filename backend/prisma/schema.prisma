@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,18 +6,43 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
-  posts Post[]
+  id           String        @id @default(uuid())
+  firebaseUid  String        @unique
+  email        String        @unique
+  createdAt    DateTime      @default(now())
+  quizSessions QuizSession[]
+  Quiz         Quiz[]
 }
 
-model Post {
-  id        Int     @id @default(autoincrement())
-  title     String
-  content   String?
-  published Boolean @default(false)
-  author    User    @relation(fields: [authorId], references: [id])
-  authorId  Int
+model Quiz {
+  id           String        @id @default(uuid())
+  hostId       String
+  host         User          @relation(fields: [hostId], references: [firebaseUid], onDelete: Cascade)
+  quizCode     String        @unique
+  questions    Question[]
+  quizSessions QuizSession[]
+
+  createdAt DateTime @default(now())
+}
+
+model Question {
+  id      String @id @default(uuid())
+  quizId  String
+  quiz    Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  text    String
+  options Json
+  answer  String
+}
+
+model QuizSession {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quizId    String
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  score     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
