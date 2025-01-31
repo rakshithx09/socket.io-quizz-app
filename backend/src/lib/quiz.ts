@@ -37,8 +37,8 @@ export const addQuestions = async (questions: Question[], socket: Socket, io) =>
             });
 
             if (!!createdQuestion) {
-                // Emit to all clients connected to the same quiz room
-                io.to(question.quizCode).emit("question-added", {
+                
+                io.to(`${question.quizCode}-host`).emit("question-added", {
                     ...question
                 });
             }

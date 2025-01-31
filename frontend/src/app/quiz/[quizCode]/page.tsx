@@ -9,8 +9,8 @@ import { fetchUser } from "@/app/lib/user";
 
 const QuizPage = () => {
   const { quizCode } = useParams();
-  const { quiz, setQuiz , questions, setQuestions,addQuestion} = useStore();
-  const [isHost, setIsHost] = useState(false);
+  const { quiz, setQuiz , questions, setQuestions,addQuestion, isHost, setIsHost, participantQuiz,setParticipantQuiz} = useStore();
+  
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -26,14 +26,29 @@ const QuizPage = () => {
   useEffect(() => {
     if (!user) return; 
   
-    const socket = getSocket(quizCode as string);
+    const socket = getSocket(quizCode as string, isHost);
   
     socket.on("init-quiz", (data) => {
       console.log("data from socket: ", data);
       console.log("uid ", user);
-      setIsHost(data.quizData.hostId === user?.uid);  
-       setQuiz(data.quizData);
+      console.log("host event")
+      if(data.quizData.hostId === user?.uid){
+          setIsHost(true); 
+          setQuiz(data.quizData);
       setQuestions(data.questions) 
+      }else{
+        setIsHost(false)
+      }
+      
+      
+       
+    });
+    socket.on("participant-quiz", (data) => {
+      console.log("data from socket: ", data);
+      console.log("uid ", user);
+      console.log("participant event")
+      setIsHost(data.hostId === user?.uid);  
+      setParticipantQuiz(data);
     });
 
     socket.on("question-added", async (data) => {
@@ -45,9 +60,9 @@ const QuizPage = () => {
       socket.off("init-quiz");
       disconnectSocket();
     };
-  }, [quizCode, user, setQuiz, setQuestions, addQuestion]);
+  }, [quizCode, user, setQuiz, setQuestions, addQuestion, isHost, setIsHost, setParticipantQuiz]);
 
-  if (!quiz) return <p>Loading quiz...</p>;
+  if (!quiz && !participantQuiz) return <p>Loading quiz...</p>;
 
   return isHost ? <HostDashboard quizCode={quizCode as string} /> : <ParticipantDashboard quizCode={quizCode as string} />;
 };
