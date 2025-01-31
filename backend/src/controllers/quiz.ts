@@ -107,7 +107,7 @@ export const joinQuizHandler = async (req: AuthenticatedRequest, res: Response) 
 
         const createdSession = await db.quizSession.create({
             data: {
-                userId: createdUser.id,
+                userId: createdUser.firebaseUid,
                 quizId: quiz.id,
                 score: 0,
             }

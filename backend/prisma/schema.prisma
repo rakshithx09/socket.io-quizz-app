@@ -36,6 +36,7 @@ model Question {
   answer  String
 }
 
+
 model QuizSession {
   id        String   @id @default(uuid())
   userId    String

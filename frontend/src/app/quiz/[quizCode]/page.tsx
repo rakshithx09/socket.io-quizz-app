@@ -9,7 +9,7 @@ import { fetchUser } from "@/app/lib/user";
 
 const QuizPage = () => {
   const { quizCode } = useParams();
-  const { quiz, setQuiz } = useStore();
+  const { quiz, setQuiz , questions, setQuestions,addQuestion} = useStore();
   const [isHost, setIsHost] = useState(false);
   const [user, setUser] = useState(null);
 
@@ -32,14 +32,20 @@ const QuizPage = () => {
       console.log("data from socket: ", data);
       console.log("uid ", user);
       setIsHost(data.quizData.hostId === user?.uid);  
-      setQuiz(data);
+       setQuiz(data.quizData);
+      setQuestions(data.questions) 
     });
+
+    socket.on("question-added", async (data) => {
+      console.log("Question recieved from socket  :: ", data)
+      addQuestion(data)
+    })
   
     return () => {
       socket.off("init-quiz");
       disconnectSocket();
     };
-  }, [quizCode, user, setQuiz]);
+  }, [quizCode, user, setQuiz, setQuestions, addQuestion]);
 
   if (!quiz) return <p>Loading quiz...</p>;
 

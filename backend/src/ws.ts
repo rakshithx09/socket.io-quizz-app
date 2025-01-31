@@ -1,5 +1,6 @@
 import { Server } from "socket.io";
 import db from "./db"
+import { addQuestions } from "./lib/quiz";
 export const initWs = (httpServer) => {
     const io = new Server(httpServer, {
         cors: {
@@ -19,15 +20,28 @@ export const initWs = (httpServer) => {
             console.log("successfully connected, quiz code:", quizCode);
 
             if(!quizCode){
-                throw new Error("Quiz code not found in connection handshake")
+                throw new Error("quiz code not found in connection handshake")
             }
+            const quizData = await db.quiz.findUnique({
+                where : {
+                    quizCode : quizCode as string
+                }
+            })
             socket.emit("init-quiz", {
-                quizData : await db.quiz.findUnique({
+                quizData ,
+                questions: await db.question.findMany({
                     where : {
-                        quizCode : quizCode as string
+                        quizId : quizData?.id
                     }
                 })
              })
+
+
+
+            socket.on("submit-questions", async (data) => {
+                addQuestions(data, socket);
+                console.log("submitted questions :  ",data)
+            })
 
         } catch (error) {
             console.error("Error ", error.message)

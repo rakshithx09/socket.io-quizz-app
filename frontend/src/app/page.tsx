@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import useStore from "./store/quizStore";
 export const API_URL = "http://localhost:3001";
 
-const randomGenerator = () => Math.floor(10000 + Math.random() * 90000).toString();
+const randomGenerator = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 export default function Home() {
   const [quizCode, setQuizCode] = useState("");
