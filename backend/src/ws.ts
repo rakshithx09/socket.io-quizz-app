@@ -22,6 +22,11 @@ export const initWs = (httpServer) => {
             if(!quizCode){
                 throw new Error("quiz code not found in connection handshake")
             }
+
+            if (quizCode) {
+                socket.join(quizCode);
+                console.log(`${socket.id} joined room ${quizCode}`);
+            }
             const quizData = await db.quiz.findUnique({
                 where : {
                     quizCode : quizCode as string
@@ -39,7 +44,7 @@ export const initWs = (httpServer) => {
 
 
             socket.on("submit-questions", async (data) => {
-                addQuestions(data, socket);
+                addQuestions(data, socket, io);
                 console.log("submitted questions :  ",data)
             })
 

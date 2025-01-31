@@ -3,9 +3,17 @@ import { Box, Typography, Button, TextField, List, ListItem, ListItemText, Paper
 import { getSocket } from "@/app/store/socketStore";
 import useStore from "../store/quizStore";
 
+interface QuestionFromDB {
+  text: string;
+  options: string[];
+  correctAnswer: number;
+  quizCode: string;
+}
+
 const HostDashboard = ({ quizCode }: { quizCode: string }) => {
   const { quiz, questions, addQuestion , setQuestions} = useStore();
   const [showAddQuestion, setShowAddQuestion] = useState(false);
+  const [uncommittedQuestions, setUncommittedQuestions] = useState<QuestionFromDB[]>([]);
   const [newQuestion, setNewQuestion] = useState("");
   const [newOptions, setNewOptions] = useState(["", "", "", ""]);
   const [correctAnswer, setCorrectAnswer] = useState(0);
@@ -28,10 +36,9 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
     if (newQuestion.trim() && newOptions.every(opt => opt.trim())) {
       const newQ = { text: newQuestion, options: newOptions, correctAnswer , quizCode}; 
       console.log("newQ :: " ,newQ)
-      addQuestion(newQ);
+      setUncommittedQuestions([...uncommittedQuestions, newQ]);
 
-      /* socket.emit("send-question", newQ);
-       */
+
       setNewQuestion("");
       setNewOptions(["", "", "", ""]);
       setCorrectAnswer(0); 
@@ -62,11 +69,15 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
 
   const handleSubmitQuestions = () => {
     
-    console.log("before submit")
+    if (uncommittedQuestions.length === 0) return;
+
+    socket.emit("submit-questions", uncommittedQuestions);
+    console.log("question ::  " , uncommittedQuestions)
+    setUncommittedQuestions([]); 
     
-   socket.emit("submit-questions", questions);
-    console.log("question ::  " , questions)
-    setQuestions([])
+  
+    
+   
   };
   return (
     <Box sx={{ mt: 4 }}>
@@ -128,21 +139,19 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
               <Button variant="outlined" color="secondary" fullWidth sx={{ mt: 1 }} onClick={() => setShowAddQuestion(false)}>Cancel</Button>
             </>
           )}
-          {questions && questions.length > 0 && (
-            <Paper elevation={3} sx={{ p: 2, mt: 3 }}>
-              <Typography variant="h5">Added Questions</Typography>
-              <List>
-                {questions.map((q, index) => (
-                  <ListItem key={index} divider>
-                    <ListItemText primary={`${index + 1}. ${q.text}`} />
-                  </ListItem>
-                ))}
-              </List>
-            </Paper>
-          )}
-          {questions && questions.length > 0 && (
+          <Paper elevation={3} sx={{ p: 2, mt: 3 }}>
+            <Typography variant="h5">All Questions</Typography>
+            <List>
+              {[...questions, ...uncommittedQuestions].map((q, index) => (
+                <ListItem key={index} divider>
+                  <ListItemText primary={`${index + 1}. ${q.text}`} />
+                </ListItem>
+              ))}
+            </List>
+          </Paper>
+          {uncommittedQuestions.length > 0 && (
             <Button variant="contained" color="primary" fullWidth sx={{ mt: 3 }} onClick={handleSubmitQuestions}>
-              Submit All Questions
+              Submit All New Questions
             </Button>
           )}
         </Paper>

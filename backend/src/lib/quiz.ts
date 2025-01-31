@@ -7,14 +7,13 @@ interface Question {
     quizCode: string;
     correctAnswer: number;
 }
-
-export const addQuestions = async (questions: Question[], socket : Socket) => {
+export const addQuestions = async (questions: Question[], socket: Socket, io) => {
     try {
         if (!questions || questions.length === 0) {
             throw new Error("questions not received");
         }
 
-        for (const question of questions) {  
+        for (const question of questions) {
             const existingQuiz = await db.quiz.findUnique({
                 where: { quizCode: question.quizCode }
             });
@@ -22,8 +21,8 @@ export const addQuestions = async (questions: Question[], socket : Socket) => {
             console.log("existing quiz:", existingQuiz);
 
             if (!existingQuiz) {
-                throw new Error("quiz doesnt exist");
-            } 
+                throw new Error("quiz doesn't exist");
+            }
             if (existingQuiz.state === "ended") {
                 throw new Error("quiz has ended");
             }
@@ -36,10 +35,12 @@ export const addQuestions = async (questions: Question[], socket : Socket) => {
                     options: JSON.stringify(question.options)
                 }
             });
-            if(!!createdQuestion){
-                socket.emit("question-added", {
+
+            if (!!createdQuestion) {
+                // Emit to all clients connected to the same quiz room
+                io.to(question.quizCode).emit("question-added", {
                     ...question
-                })
+                });
             }
 
             console.log("question added successfully");

@@ -4,7 +4,7 @@ import useStore from "../store/quizStore";
 import { getSocket } from "@/app/store/socketStore";
 
 const ParticipantDashboard = ({quizCode} : {quizCode : string}) => {
-  const { quiz } = useStore();
+  const { quiz, questions } = useStore();
   const [selectedOption, setSelectedOption] = useState(null);
 
   const handleAnswer = (option) => {
@@ -41,6 +41,10 @@ const ParticipantDashboard = ({quizCode} : {quizCode : string}) => {
           ))}
         </List>
       </Paper>
+
+      {
+        JSON.stringify(questions)
+      }
     </Box>
   );
 };
