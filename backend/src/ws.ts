@@ -97,7 +97,7 @@ export const initWs = (httpServer) => {
                         clearInterval(quizState[quizCode as string].timer!);
                         
                     }
-                }, 5000); 
+                }, 10000); 
                 } catch (error) {
                     console.log(error.message)
                 }
@@ -130,6 +130,34 @@ export const initWs = (httpServer) => {
                 
             })
 
+            socket.on("close-quiz", async () => {
+                try {
+                    if (isHost !== "true") return;
+                    console.log(`closing quiz for ${quizCode}`);
+            
+                    if (quizState[quizCode as string]) {  // Ensure quizState exists
+                        if (quizState[quizCode as string].timer) {
+                            clearInterval(quizState[quizCode as string].timer!);
+                        }
+                        delete quizState[quizCode as string]; // Clean up quiz state
+                    }
+            
+                    await db.quiz.update({
+                        where: {
+                            quizCode: quizCode as string
+                        },
+                        data: {
+                            state: "closed"
+                        }
+                    });
+            
+                    io.to(quizCode).emit("quiz-closed");
+                    io.to(`${quizCode}-host`).emit("quiz-closed");
+                } catch (error) {
+                    console.log(error.message);
+                }
+            });
+            
 
 
             socket.on("submit-questions", async (data) => {

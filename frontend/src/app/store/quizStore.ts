@@ -11,6 +11,8 @@ const useStore = create((set) => ({
   questions: [],
   activeIndex: 0,
   isHost:true,
+  isClosed: false,
+  setIsClosed : (isClosed) => set({ isClosed }),
   setState : (state) => set({ state }),
   setIsHost : (isHost) => set({ isHost }),
 

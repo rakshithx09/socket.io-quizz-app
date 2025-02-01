@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Box, Typography, Button, TextField, List, ListItem, ListItemText, Paper, Stack, Radio, RadioGroup, FormControlLabel, FormControl, FormLabel } from "@mui/material";
+import { Box, Typography, Button, TextField, List, ListItem, ListItemText, Paper, Stack, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio } from "@mui/material";
 import { getSocket } from "@/app/store/socketStore";
 import useStore from "../store/quizStore";
 
@@ -11,56 +11,31 @@ interface QuestionFromDB {
 }
 
 const HostDashboard = ({ quizCode }: { quizCode: string }) => {
-  const { quiz, questions, addQuestion , setQuestions,state, setState, resetStore} = useStore();
+  const { quiz, questions, setQuestions, state, setState, resetStore,isClosed,setIsClosed } = useStore();
   const [showAddQuestion, setShowAddQuestion] = useState(false);
   const [uncommittedQuestions, setUncommittedQuestions] = useState<QuestionFromDB[]>([]);
   const [newQuestion, setNewQuestion] = useState("");
   const [newOptions, setNewOptions] = useState(["", "", "", ""]);
   const [correctAnswer, setCorrectAnswer] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
- /*  const [quizStarted, setQuizStarted] = useState(false); */
 
   const socket = getSocket(quizCode, true);
-
 
   useEffect(() => {
     socket.on("quiz-ended", () => {
       setState(false);
-    })
+    });
     socket.on("quiz-started", () => {
       setState(true);
-    })
+    });
+    socket.on("quiz-closed", () => {
+      setIsClosed(true);
+    });
+
+
     return () => {
-      /* resetStore() */
       socket.off("next-question");
     };
-  }, [socket, setState, resetStore])
-  const handleOptionChange = (index: number, value: string) => {
-    const updatedOptions = [...newOptions];
-    updatedOptions[index] = value;
-    setNewOptions(updatedOptions);
-  };
-
-  const handleCorrectAnswerChange = (event: React.ChangeEvent<HTMLInputElement>, value: string) => {
-    setCorrectAnswer(Number(value));
-  };
-
-  const handleAddQuestion = () => {
-    if (newQuestion.trim() && newOptions.every(opt => opt.trim())) {
-      const newQ = { text: newQuestion, options: newOptions, correctAnswer , quizCode}; 
-      console.log("newQ :: " ,newQ)
-      setUncommittedQuestions([...uncommittedQuestions, newQ]);
-
-
-      setNewQuestion("");
-      setNewOptions(["", "", "", ""]);
-      setCorrectAnswer(0); 
-      setShowAddQuestion(false);
-
-    } else {
-      alert("Please fill in all fields.");
-    }
-  };
+  }, [socket, setState, setIsClosed]);
 
   const handleStartEndQuiz = () => {
     if (state) {
@@ -68,36 +43,19 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
     } else {
       socket.emit("start-quiz");
     }
-    /* setQuizStarted(!quizStarted); */
   };
 
-  const handlePauseContinue = () => {
-    if (isPaused) {
-      socket.emit("continue-quiz");
-    } else {
-      socket.emit("pause-quiz");
-    }
-    setIsPaused(!isPaused);
+  const handleCloseQuiz = () => {
+    socket.emit("close-quiz");
   };
 
-  const handleSubmitQuestions = () => {
-    
-    if (uncommittedQuestions.length === 0) return;
-
-    socket.emit("submit-questions", uncommittedQuestions);
-    console.log("question ::  " , uncommittedQuestions)
-    setUncommittedQuestions([]); 
-    
-  
-    
-   
-  };
   return (
     <Box sx={{ mt: 4 }}>
       <Typography variant="h4" align="center">Quiz Host Dashboard</Typography>
 
       <Stack direction="row" spacing={3} justifyContent="center" sx={{ mt: 2 }}>
         
+        {/* Leaderboard Panel */}
         <Paper elevation={3} sx={{ p: 2, width: 250 }}>
           <Typography variant="h5">Leaderboard</Typography>
           <List>
@@ -109,23 +67,41 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
           </List>
         </Paper>
 
+        {/* Active Question Panel */}
         <Paper elevation={3} sx={{ p: 2, width: 250 }}>
           <Typography variant="h5">Active Question</Typography>
           <Typography variant="h6">{quiz.activeQuestion?.question || "No active question"}</Typography>
         </Paper>
 
+        {/* Quiz Controls Panel */}
         <Paper elevation={3} sx={{ p: 2, width: 250, textAlign: "center" }}>
-          <Typography variant="h5">Quiz Controls</Typography>
-          <Button variant="contained" color={state ? "error" : "success"} fullWidth sx={{ mt: 2 }} onClick={handleStartEndQuiz}>
-            {state ? "End Quiz" : "Start Quiz"}
-          </Button>
-          {state && (
-            <Button variant="contained" color={isPaused ? "primary" : "warning"} fullWidth sx={{ mt: 2 }} onClick={handlePauseContinue}>
-              {isPaused ? "Continue Quiz" : "Pause Quiz"}
-            </Button>
-          )}
-        </Paper>
+  <Typography variant="h5">Quiz Controls</Typography>
 
+  {isClosed ? (
+    <Typography variant="h6" color="error" sx={{ mt: 2 }}>
+      Quiz Closed
+    </Typography>
+  ) : (
+    <>
+      <Button
+        variant="contained"
+        color={state ? "error" : "success"}
+        fullWidth
+        sx={{ mt: 2 }}
+        onClick={handleStartEndQuiz}
+      >
+        {state ? "End Quiz" : "Start Quiz"}
+      </Button>
+
+      {/* Close Quiz Button */}
+      <Button variant="contained" color="secondary" fullWidth sx={{ mt: 2 }} onClick={handleCloseQuiz}>
+        Close Quiz
+      </Button>
+    </>
+  )}
+</Paper>
+
+        {/* Manage Questions Panel */}
         <Paper elevation={3} sx={{ p: 2, width: 250 }}>
           <Typography variant="h5">Manage Questions</Typography>
           {!showAddQuestion ? (
@@ -136,22 +112,39 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
             <>
               <TextField label="Enter Question" variant="outlined" fullWidth sx={{ my: 2 }} value={newQuestion} onChange={(e) => setNewQuestion(e.target.value)} />
               {newOptions.map((option, index) => (
-                <TextField key={index} label={`Option ${index + 1}`} variant="outlined" fullWidth sx={{ my: 1 }} value={option} onChange={(e) => handleOptionChange(index, e.target.value)} />
+                <TextField key={index} label={`Option ${index + 1}`} variant="outlined" fullWidth sx={{ my: 1 }} value={option} onChange={(e) => {
+                  const updatedOptions = [...newOptions];
+                  updatedOptions[index] = e.target.value;
+                  setNewOptions(updatedOptions);
+                }} />
               ))}
 
               <FormControl component="fieldset" sx={{ my: 2 }}>
                 <FormLabel component="legend">Select Correct Answer</FormLabel>
-                <RadioGroup value={correctAnswer.toString()} onChange={handleCorrectAnswerChange}>
+                <RadioGroup value={correctAnswer.toString()} onChange={(e) => setCorrectAnswer(Number(e.target.value))}>
                   {newOptions.map((option, index) => (
                     <FormControlLabel key={index} value={index.toString()} control={<Radio />} label={`Option ${index + 1}`} />
                   ))}
                 </RadioGroup>
               </FormControl>
 
-              <Button variant="contained" color="success" fullWidth sx={{ mt: 2 }} onClick={handleAddQuestion}>Save Question</Button>
+              <Button variant="contained" color="success" fullWidth sx={{ mt: 2 }} onClick={() => {
+                if (newQuestion.trim() && newOptions.every(opt => opt.trim())) {
+                  setUncommittedQuestions([...uncommittedQuestions, { text: newQuestion, options: newOptions, correctAnswer, quizCode }]);
+                  setNewQuestion("");
+                  setNewOptions(["", "", "", ""]);
+                  setCorrectAnswer(0);
+                  setShowAddQuestion(false);
+                } else {
+                  alert("Please fill in all fields.");
+                }
+              }}>Save Question</Button>
+
               <Button variant="outlined" color="secondary" fullWidth sx={{ mt: 1 }} onClick={() => setShowAddQuestion(false)}>Cancel</Button>
             </>
           )}
+
+          {/* All Questions List */}
           <Paper elevation={3} sx={{ p: 2, mt: 3 }}>
             <Typography variant="h5">All Questions</Typography>
             <List>
@@ -162,8 +155,15 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
               ))}
             </List>
           </Paper>
+
+          {/* Submit All New Questions Button */}
           {uncommittedQuestions.length > 0 && (
-            <Button variant="contained" color="primary" fullWidth sx={{ mt: 3 }} onClick={handleSubmitQuestions}>
+            <Button variant="contained" color="primary" fullWidth sx={{ mt: 3 }} onClick={() => {
+              if (uncommittedQuestions.length > 0) {
+                socket.emit("submit-questions", uncommittedQuestions);
+                setUncommittedQuestions([]);
+              }
+            }}>
               Submit All New Questions
             </Button>
           )}

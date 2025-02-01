@@ -51,5 +51,6 @@ model QuizSession {
 
 enum QuizState {
   active
+  closed
   ended
 }

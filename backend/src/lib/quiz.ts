@@ -24,8 +24,8 @@ export const addQuestions = async (questions: Question[], socket: Socket, io) =>
             if (!existingQuiz) {
                 throw new Error("quiz doesn't exist");
             }
-            if (existingQuiz.state === "ended") {
-                throw new Error("quiz has ended");
+            if (existingQuiz.state === "closed") {
+                throw new Error("quiz has closed");
             }
 
             const createdQuestion = await db.question.create({

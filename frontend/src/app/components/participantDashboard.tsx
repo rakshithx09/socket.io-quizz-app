@@ -4,7 +4,7 @@ import useStore from "../store/quizStore";
 import { getSocket } from "@/app/store/socketStore";
 
 const ParticipantDashboard = ({ quizCode }: { quizCode: string }) => {
-  const { currentQuestion, setCurrentQuestion, state, setState, resetStore } = useStore();
+  const { currentQuestion, setCurrentQuestion, state, setState, resetStore ,isClosed,setIsClosed} = useStore();
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
   useEffect(() => {
@@ -27,23 +27,31 @@ const ParticipantDashboard = ({ quizCode }: { quizCode: string }) => {
       setState(true); 
       console.log("quiz-started received");
     });
+    socket.on("quiz-closed", () => {
+      console.log("quiz-closed recieved")
+      setIsClosed(true);
+    });
 
     return () => {
       socket.off("next-question");
       socket.off("quiz-ended");
       socket.off("quiz-started");
     };
-  }, [quizCode, setCurrentQuestion, setState]);
+  }, [quizCode, setCurrentQuestion, setState, setIsClosed]);
 
   const handleAnswer = (option: string) => {
     setSelectedOption(option);
     const socket = getSocket(quizCode, false);
     socket.emit("submit-answer", { quizCode, answer: option });
   };
-
+   console.log("isclosed : " , isClosed) 
   if (!state) {
     return <div>Quiz has been ended</div>;  
   }
+  
+   if(isClosed){
+    return <div>Quiz has been closed</div>; 
+  } 
 
   return (
     <Box sx={{ mt: 4, textAlign: "center" }}>
