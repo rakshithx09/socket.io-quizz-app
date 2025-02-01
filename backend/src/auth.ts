@@ -40,6 +40,7 @@ export const authMiddleWare = async (req: Request, res: Response, next: NextFunc
     try {
         const decodedToken = await admin.auth().verifyIdToken(idToken);
         console.log("Middle ware: token verified succesfully")
+        console.log("decoded token -----", decodedToken)
         req.user = decodedToken;
         next();
         return;

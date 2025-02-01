@@ -4,10 +4,10 @@ import useStore from "../store/quizStore";
 import { getSocket } from "@/app/store/socketStore";
 
 const ParticipantDashboard = ({ quizCode }: { quizCode: string }) => {
-  const { currentQuestion, setCurrentQuestion, state, setState, isClosed, setIsClosed, user } = useStore();
+  const { currentQuestion, setCurrentQuestion, state,participantQuiz, setState, isClosed, setIsClosed, user, leaderboard, setLeaderboard } = useStore();
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
-  const [submission, setSubmission] = useState<{ qid: string; quizCode: string; answer: number | null; uid: string } | null>(null);
+  const [submission, setSubmission] = useState<{ qid: string;quizId:string; quizCode:string;  answer: number | null; uid: string } | null>(null);
 
   const handleAnswer = (option: number | null, socket) => {
     console.log("index submitting is : ", option);
@@ -16,7 +16,7 @@ const ParticipantDashboard = ({ quizCode }: { quizCode: string }) => {
     socket.emit("submit-answer", { ...submission, answer: option });
   };
 
- 
+
   useEffect(() => {
     const socket = getSocket(quizCode, false);
     console.log("user from p d: ", user);
@@ -50,6 +50,9 @@ const ParticipantDashboard = ({ quizCode }: { quizCode: string }) => {
       console.log("selected q in time-up -----: ", selectedOption);
       handleAnswer(selectedOption, socket);
     });
+    socket.on("leaderboard-update", (newLeaderboard) => {
+      setLeaderboard(newLeaderboard);
+    });
 
     return () => {
       socket.off("next-question");
@@ -59,20 +62,29 @@ const ParticipantDashboard = ({ quizCode }: { quizCode: string }) => {
       socket.off("timer-update");
       socket.off("time-up");
     };
-  }, [quizCode, setCurrentQuestion, setState, setIsClosed, selectedOption, user.uid]); 
+  }, [quizCode, setCurrentQuestion, setState, setIsClosed, selectedOption, user.uid]);
 
   useEffect(() => {
-    if (currentQuestion && user) {
+    if (currentQuestion && user && participantQuiz.id ) {
+
+      console.log("set submission --",{
+        qid: currentQuestion.id,
+        quizCode,
+        quizId:participantQuiz.id,
+        answer: selectedOption,
+        uid: user.uid,
+      } )
       setSubmission({
         qid: currentQuestion.id,
         quizCode,
+        quizId:participantQuiz.id,
         answer: selectedOption,
         uid: user.uid,
       });
     }
-  }, [currentQuestion, selectedOption, quizCode, user]); 
+  }, [currentQuestion, selectedOption, quizCode, user, participantQuiz.id]);
 
-  if (!state) return <div>quiz has ended</div>;
+  
   if (isClosed) return <div>quiz has been closed</div>;
 
   return (
@@ -88,7 +100,7 @@ const ParticipantDashboard = ({ quizCode }: { quizCode: string }) => {
           </Typography>
         )}
 
-        {currentQuestion ? (
+        {currentQuestion && state ? (
           <>
             <Typography variant="h6" sx={{ mb: 2 }}>{currentQuestion.text}</Typography>
 
@@ -105,6 +117,17 @@ const ParticipantDashboard = ({ quizCode }: { quizCode: string }) => {
         ) : (
           <Typography variant="h6" sx={{ color: "gray" }}>Waiting for next question...</Typography>
         )}
+
+        <Paper elevation={3} sx={{ p: 3 }}>
+          <Typography variant="h5">Leaderboard</Typography>
+          <List>
+            {leaderboard?.map((player, index) => (
+              <ListItem key={index} divider>
+                <ListItemText primary={`${player.email} - ${player.score} points`} />
+              </ListItem>
+            ))}
+          </List>
+        </Paper>
       </Paper>
     </Box>
   );

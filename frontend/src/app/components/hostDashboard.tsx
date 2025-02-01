@@ -11,7 +11,7 @@ interface QuestionFromDB {
 }
 
 const HostDashboard = ({ quizCode }: { quizCode: string }) => {
-  const { quiz, questions, setQuestions, state, setState, resetStore,isClosed,setIsClosed } = useStore();
+  const { quiz, questions, setQuestions, state, setState, resetStore,isClosed,setIsClosed, leaderboard, setLeaderboard  } = useStore();
   const [showAddQuestion, setShowAddQuestion] = useState(false);
   const [uncommittedQuestions, setUncommittedQuestions] = useState<QuestionFromDB[]>([]);
   const [newQuestion, setNewQuestion] = useState("");
@@ -29,6 +29,11 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
     });
     socket.on("quiz-closed", () => {
       setIsClosed(true);
+    });
+
+    socket.on("leaderboard-update", (newLeaderboard) => {
+      console.log("new leaderboard   :::: ",newLeaderboard)
+      setLeaderboard(newLeaderboard);
     });
 
 
@@ -49,18 +54,20 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
     socket.emit("close-quiz");
   };
 
+  console.log("leaderboard in root ::::", leaderboard)
+
   return (
     <Box sx={{ mt: 4 }}>
       <Typography variant="h4" align="center">Quiz Host Dashboard</Typography>
 
       <Stack direction="row" spacing={3} justifyContent="center" sx={{ mt: 2 }}>
         
-        <Paper elevation={3} sx={{ p: 2, width: 250 }}>
+      <Paper elevation={3} sx={{ p: 2, width: 250 }}>
           <Typography variant="h5">Leaderboard</Typography>
           <List>
-            {quiz.leaderboard?.map((player, index) => (
+            {leaderboard?.map((player, index) => (
               <ListItem key={index} divider>
-                <ListItemText primary={`${player.name} - ${player.score} points`} />
+                <ListItemText primary={`${player.username} - ${player.score} points`} />
               </ListItem>
             ))}
           </List>
@@ -140,7 +147,7 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
             </>
           )}
 
-          {/* All Questions List */}
+        
           <Paper elevation={3} sx={{ p: 2, mt: 3 }}>
             <Typography variant="h5">All Questions</Typography>
             <List>
@@ -152,7 +159,6 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
             </List>
           </Paper>
 
-          {/* Submit All New Questions Button */}
           {uncommittedQuestions.length > 0 && (
             <Button variant="contained" color="primary" fullWidth sx={{ mt: 3 }} onClick={() => {
               if (uncommittedQuestions.length > 0) {

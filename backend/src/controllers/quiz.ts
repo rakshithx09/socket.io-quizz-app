@@ -14,6 +14,7 @@ export const createQuizHandler = async (req: AuthenticatedRequest, res: Response
         const existingUser = await db.user.findUnique({
             where: { firebaseUid: user.uid },
         });
+        console.log("exisiting user: ", existingUser)
 
         let createdUser;
         if (!existingUser) {
@@ -23,6 +24,7 @@ export const createQuizHandler = async (req: AuthenticatedRequest, res: Response
                     email: user.email!,
                 },
             });
+            console.log("created user: ", createdUser)
         } else {
             createdUser = existingUser;
         }
@@ -33,10 +35,11 @@ export const createQuizHandler = async (req: AuthenticatedRequest, res: Response
                 quizCode,
             },
         });
+        console.log("createdQuiz: ", createdQuiz)
 
         await db.quizSession.create({
             data: {
-                userId: createdUser.id,
+                userId: createdUser.firebaseUid,
                 quizId: createdQuiz.id,
                 score: 0,
             }
@@ -72,11 +75,11 @@ export const joinQuizHandler = async (req: AuthenticatedRequest, res: Response) 
             res.status(404).json({ success: false, message: "quiz not found" });
             return;
         }
-
+        console.log("uid ::" , user.uid)
         const existingSession = await db.quizSession.findFirst({
             where: {
                 quizId: quiz.id,
-                userId: user.id,
+                userId: user.uid,
             },
         });
         if (quiz.state == 'active') {

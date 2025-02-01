@@ -1,6 +1,6 @@
 import { DefaultEventsMap, Server } from "socket.io";
 import db from "./db"
-import { addQuestions, sendNextQuestion } from "./lib/quiz";
+import { addQuestions, handleAnswerSubmission, sendNextQuestion } from "./lib/quiz";
 
 export type QuizState = Record<string, {
     activeQuestionIndex: number;
@@ -179,8 +179,9 @@ export const initWs = (httpServer) => {
             })
 
             socket.on("submit-answer", async (data) => {
-                console.log("submittion recieevd from :  ", data)
-            })
+                console.log("submission received from : ", data);
+                await handleAnswerSubmission(socket, io, data);
+            });
         } catch (error) {
             console.error("Error ", error.message)
         }

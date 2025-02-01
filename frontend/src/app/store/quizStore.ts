@@ -13,8 +13,10 @@ const useStore = create((set) => ({
   isHost:true,
   isClosed: false,
   user: null,
+  leaderboard: [],
 
   submission: null,
+  setLeaderboard: (leaderboard) => set({ leaderboard }),
   setSubmission: (submission) => set({ submission }),
   setUser : (user) => set({ user }),
   setIsClosed : (isClosed) => set({ isClosed }),

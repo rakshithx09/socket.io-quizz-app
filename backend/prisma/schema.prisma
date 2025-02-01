@@ -40,12 +40,13 @@ model Question {
 model QuizSession {
   id        String   @id @default(uuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [firebaseUid], onDelete: Cascade)
   quizId    String
   quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
   score     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@unique([userId, quizId])
 }
 
 
