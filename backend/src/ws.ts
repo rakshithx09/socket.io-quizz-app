@@ -25,7 +25,7 @@ export const initWs = (httpServer) => {
     io.on('connection', async (socket) => {
         try {
             console.log(" connection recv from:", socket.handshake.address);
-            console.log("full handshake:", socket.handshake);
+            /* console.log("full handshake:", socket.handshake); */
 
             const { quizCode, isHost } = socket.handshake.query;
             console.log("successfully connected, quiz code:", quizCode);
@@ -51,12 +51,6 @@ export const initWs = (httpServer) => {
                 where: { quizId: quizData?.id }
             });
 
-            quizState[quizCode as string] = {
-                activeQuestionIndex: 0,
-                questionOrder: questions.map((q) => q.id),
-                timer: null
-            };
-
             io.to(`${quizCode}-host`).emit("init-quiz", {
                 quizData,
                 questions
@@ -67,10 +61,32 @@ export const initWs = (httpServer) => {
             })
 
             socket.on("start-quiz", async () => {
-                if (isHost !== "true") return;
+                try {
+                    if (isHost !== "true") return;
 
                 console.log(`starting quiz for ${quizCode}`);
+                io.to(`${quizCode}-host`).emit("quiz-started")
+                io.to(quizCode).emit("quiz-started")
 
+                const questions = await db.question.findMany({
+                    where: { quizId: quizData?.id }
+                });
+    
+                quizState[quizCode as string] = {
+                    activeQuestionIndex: 0,
+                    questionOrder: questions.map((q) => q.id),
+                    timer: null
+                };
+                console.log("Quiz state :  ", quizState[quizCode as string])
+                await db.quiz.update({
+                    where: {
+                        quizCode: quizCode as string
+                    },
+                    data: {
+                        state: "active"
+                    }
+                })
+                quizState[quizCode  as string].activeQuestionIndex = 0;
                 await sendNextQuestion(io, quizCode as string, quizState);
 
                 quizState[quizCode as string].timer = setInterval(async () => {
@@ -79,10 +95,40 @@ export const initWs = (httpServer) => {
 
                     if (!hasMoreQuestions) {
                         clearInterval(quizState[quizCode as string].timer!);
-                        io.to(quizCode).emit("quiz-ended");
+                        
                     }
-                }, 3000); 
+                }, 5000); 
+                } catch (error) {
+                    console.log(error.message)
+                }
+                
             });
+
+            socket.on("end-quiz", async () => {
+
+                try {
+                    if (isHost !== "true") return;
+                console.log(`ending quiz for ${quizCode}`);
+                clearInterval(quizState[quizCode as string].timer!);
+
+                await db.quiz.update({
+                    where: {
+                        quizCode: quizCode as string
+                    },
+                    data: {
+                        state: "ended"
+                    }
+                })
+
+                io.to(quizCode).emit("quiz-ended");
+                io.to(`${quizCode}-host`).emit("quiz-ended");
+                } catch (error) {
+                    console.log(error.message)
+                }
+                
+
+                
+            })
 
 
 

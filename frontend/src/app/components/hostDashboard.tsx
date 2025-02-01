@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Box, Typography, Button, TextField, List, ListItem, ListItemText, Paper, Stack, Radio, RadioGroup, FormControlLabel, FormControl, FormLabel } from "@mui/material";
 import { getSocket } from "@/app/store/socketStore";
 import useStore from "../store/quizStore";
@@ -11,17 +11,30 @@ interface QuestionFromDB {
 }
 
 const HostDashboard = ({ quizCode }: { quizCode: string }) => {
-  const { quiz, questions, addQuestion , setQuestions} = useStore();
+  const { quiz, questions, addQuestion , setQuestions,state, setState, resetStore} = useStore();
   const [showAddQuestion, setShowAddQuestion] = useState(false);
   const [uncommittedQuestions, setUncommittedQuestions] = useState<QuestionFromDB[]>([]);
   const [newQuestion, setNewQuestion] = useState("");
   const [newOptions, setNewOptions] = useState(["", "", "", ""]);
   const [correctAnswer, setCorrectAnswer] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const [quizStarted, setQuizStarted] = useState(false);
+ /*  const [quizStarted, setQuizStarted] = useState(false); */
 
   const socket = getSocket(quizCode, true);
 
+
+  useEffect(() => {
+    socket.on("quiz-ended", () => {
+      setState(false);
+    })
+    socket.on("quiz-started", () => {
+      setState(true);
+    })
+    return () => {
+      /* resetStore() */
+      socket.off("next-question");
+    };
+  }, [socket, setState, resetStore])
   const handleOptionChange = (index: number, value: string) => {
     const updatedOptions = [...newOptions];
     updatedOptions[index] = value;
@@ -50,12 +63,12 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
   };
 
   const handleStartEndQuiz = () => {
-    if (quizStarted) {
+    if (state) {
       socket.emit("end-quiz");
     } else {
       socket.emit("start-quiz");
     }
-    setQuizStarted(!quizStarted);
+    /* setQuizStarted(!quizStarted); */
   };
 
   const handlePauseContinue = () => {
@@ -103,10 +116,10 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
 
         <Paper elevation={3} sx={{ p: 2, width: 250, textAlign: "center" }}>
           <Typography variant="h5">Quiz Controls</Typography>
-          <Button variant="contained" color={quizStarted ? "error" : "success"} fullWidth sx={{ mt: 2 }} onClick={handleStartEndQuiz}>
-            {quizStarted ? "End Quiz" : "Start Quiz"}
+          <Button variant="contained" color={state ? "error" : "success"} fullWidth sx={{ mt: 2 }} onClick={handleStartEndQuiz}>
+            {state ? "End Quiz" : "Start Quiz"}
           </Button>
-          {quizStarted && (
+          {state && (
             <Button variant="contained" color={isPaused ? "primary" : "warning"} fullWidth sx={{ mt: 2 }} onClick={handlePauseContinue}>
               {isPaused ? "Continue Quiz" : "Pause Quiz"}
             </Button>

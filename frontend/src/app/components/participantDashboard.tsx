@@ -1,34 +1,49 @@
 import { useEffect, useState } from "react";
-import { Box, Typography, List, ListItem, ListItemText, Paper, Button, ListItemButton } from "@mui/material";
+import { Box, Typography, List, ListItem, ListItemText, Paper, ListItemButton } from "@mui/material";
 import useStore from "../store/quizStore";
 import { getSocket } from "@/app/store/socketStore";
 
 const ParticipantDashboard = ({ quizCode }: { quizCode: string }) => {
-  const { currentQuestion, setCurrentQuestion } = useStore();
+  const { currentQuestion, setCurrentQuestion, state, setState, resetStore } = useStore();
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
-  // Handle socket events
   useEffect(() => {
     const socket = getSocket(quizCode, false);
 
-    console.log("nxt-q event lisener added");
+    console.log("nxt-q event listener added");
 
     socket.on("next-question", (data) => {
-      console.log("curr question recved from socket: ", data);
-      setCurrentQuestion(data);
+      console.log("Current question received from socket: ", data);
+      setCurrentQuestion(data); 
       setSelectedOption(null); 
+    });
+
+    socket.on("quiz-ended", () => {
+      setState(false); 
+      console.log("quiz-ended received");
+    });
+
+    socket.on("quiz-started", () => {
+      setState(true); 
+      console.log("quiz-started received");
     });
 
     return () => {
       socket.off("next-question");
+      socket.off("quiz-ended");
+      socket.off("quiz-started");
     };
-  }, [quizCode, setCurrentQuestion]);
+  }, [quizCode, setCurrentQuestion, setState]);
 
   const handleAnswer = (option: string) => {
     setSelectedOption(option);
     const socket = getSocket(quizCode, false);
     socket.emit("submit-answer", { quizCode, answer: option });
   };
+
+  if (!state) {
+    return <div>Quiz has been ended</div>;  
+  }
 
   return (
     <Box sx={{ mt: 4, textAlign: "center" }}>
@@ -44,11 +59,10 @@ const ParticipantDashboard = ({ quizCode }: { quizCode: string }) => {
             <List>
               {currentQuestion.options?.map((option: string, index: number) => (
                 <ListItem key={index} disablePadding>
-                <ListItemButton selected={selectedOption === option} onClick={() => handleAnswer(option)}>
-                  <ListItemText primary={option} />
-                </ListItemButton>
-              </ListItem>
-              
+                  <ListItemButton selected={selectedOption === option} onClick={() => handleAnswer(option)}>
+                    <ListItemText primary={option} />
+                  </ListItemButton>
+                </ListItem>
               ))}
             </List>
           </>

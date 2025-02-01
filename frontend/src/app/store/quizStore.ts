@@ -6,11 +6,12 @@ const useStore = create((set) => ({
   socket: null,
   answers: [],
   quiz: null,
+  state: false,
   participantQuiz: null,
   questions: [],
   activeIndex: 0,
   isHost:true,
-
+  setState : (state) => set({ state }),
   setIsHost : (isHost) => set({ isHost }),
 
   setCurrentQuestion: (question) => set({ currentQuestion: question }),

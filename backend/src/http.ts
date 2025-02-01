@@ -4,7 +4,7 @@ import { authMiddleWare } from "./auth";
 import cors from "cors";
 import db from "./db"
 import { createQuizHandler, joinQuizHandler } from "./controllers/quiz";
-import { getUserHandler } from "./controllers/user";
+import { getUserHandler, isHostHandler } from "./controllers/user";
 
 export function initHttp(app: Express) {
     app.use(express.json());
@@ -16,4 +16,5 @@ export function initHttp(app: Express) {
     app.post("/create-quiz",authMiddleWare,createQuizHandler)
     app.post("/join-quiz",authMiddleWare,joinQuizHandler)
     app.get("/get-user",authMiddleWare,getUserHandler)
+    app.post("/isHost",authMiddleWare,isHostHandler)
 }
