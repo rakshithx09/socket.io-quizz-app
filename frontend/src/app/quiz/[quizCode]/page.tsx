@@ -10,7 +10,7 @@ import { fetchUser } from "@/app/lib/user";
 const QuizPage = () => {
   const { quizCode } = useParams();
   const { quiz, setQuiz , questions, setQuestions,addQuestion, isHost, setIsHost, participantQuiz,setParticipantQuiz} = useStore();
-  
+  const [socket, setSocket] = useState();
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -27,7 +27,6 @@ const QuizPage = () => {
     if (!user) return; 
   
     const socket = getSocket(quizCode as string, isHost);
-  
     socket.on("init-quiz", (data) => {
       console.log("data from socket: ", data);
       console.log("uid ", user);
@@ -64,7 +63,7 @@ const QuizPage = () => {
 
   if (!quiz && !participantQuiz) return <p>Loading quiz...</p>;
 
-  return isHost ? <HostDashboard quizCode={quizCode as string} /> : <ParticipantDashboard quizCode={quizCode as string} />;
+  return isHost ? <HostDashboard quizCode={quizCode as string} /> : <ParticipantDashboard quizCode={quizCode as string}  />;
 };
 
 export default QuizPage;

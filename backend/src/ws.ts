@@ -1,10 +1,21 @@
-import { Server } from "socket.io";
+import { DefaultEventsMap, Server } from "socket.io";
 import db from "./db"
-import { addQuestions } from "./lib/quiz";
+import { addQuestions, sendNextQuestion } from "./lib/quiz";
+
+export type QuizState = Record<string, { 
+    activeQuestionIndex: number; 
+    questionOrder: string[];
+    timer: NodeJS.Timeout | null;
+}> 
+    
+
+ const quizState: QuizState= {};
+
+
 export const initWs = (httpServer) => {
     const io = new Server(httpServer, {
         cors: {
-            origin: "http://localhost:3000", 
+            origin: "http://localhost:3000",  
             methods: ["GET", "POST"],
             credentials: true
         }
@@ -36,18 +47,42 @@ export const initWs = (httpServer) => {
                 }
             })
 
+            const questions = await db.question.findMany({
+                where: { quizId: quizData?.id }
+            });
+
+            quizState[quizCode as string] = {
+                activeQuestionIndex: 0,
+                questionOrder: questions.map((q) => q.id),
+                timer: null
+            };
+
             io.to(`${quizCode}-host`).emit("init-quiz", {
                 quizData,
-                questions: await db.question.findMany({
-                    where: {
-                        quizId: quizData?.id
-                    }
-                })
+                questions
             })
             io.to(quizCode).emit("participant-quiz", {
                 ...quizData
                 
             })
+
+            socket.on("start-quiz", async () => {
+                if (isHost !== "true") return;
+
+                console.log(`starting quiz for ${quizCode}`);
+
+                await sendNextQuestion(io, quizCode as string, quizState);
+
+                quizState[quizCode as string].timer = setInterval(async () => {
+                    quizState[quizCode  as string].activeQuestionIndex += 1;
+                    const hasMoreQuestions = await sendNextQuestion(io, quizCode  as string, quizState);
+
+                    if (!hasMoreQuestions) {
+                        clearInterval(quizState[quizCode as string].timer!);
+                        io.to(quizCode).emit("quiz-ended");
+                    }
+                }, 3000); 
+            });
 
 
 
@@ -65,3 +100,5 @@ export const initWs = (httpServer) => {
         });
     });
 }
+
+

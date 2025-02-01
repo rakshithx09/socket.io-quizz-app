@@ -20,7 +20,7 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
   const [isPaused, setIsPaused] = useState(false);
   const [quizStarted, setQuizStarted] = useState(false);
 
-  const socket = getSocket(quizCode);
+  const socket = getSocket(quizCode, true);
 
   const handleOptionChange = (index: number, value: string) => {
     const updatedOptions = [...newOptions];

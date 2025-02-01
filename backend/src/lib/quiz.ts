@@ -1,5 +1,6 @@
-import { Socket } from "socket.io";
+import { Socket, DefaultEventsMap, Server } from "socket.io";
 import db from "../db";
+import { QuizState } from "../ws";
 
 interface Question {
     text: string;
@@ -49,3 +50,30 @@ export const addQuestions = async (questions: Question[], socket: Socket, io) =>
         console.error("addQuestions failed:", error.message);
     }
 };
+
+
+export async function sendNextQuestion(io: Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>, quizCode: string, quizState: QuizState) {
+    const quiz = quizState[quizCode];
+    if (!quiz) return false;
+
+    const { activeQuestionIndex, questionOrder } = quiz;
+    const nextQuestionId = questionOrder[activeQuestionIndex];
+
+    if (!nextQuestionId) return false;
+
+    const question = await db.question.findUnique({
+        where: { id: nextQuestionId.toString() },
+        select: { id: true, text : true, options : true }
+    });
+
+    if (!question) return false;
+
+    io.to(quizCode).emit("next-question", { 
+        id: question.id,
+        text: question.text,
+        options: JSON.parse(question.options as string) 
+    });
+    console.log("Next question sent")
+
+    return true;
+}
