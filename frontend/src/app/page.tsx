@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createQuiz, joinQuiz } from "./lib/quiz";
 import { useRouter } from "next/navigation";
 import useStore from "./store/quizStore";
+import Link from "next/link";
 export const API_URL = "http://localhost:3001";
 
 const randomGenerator = () => Math.floor(100000 + Math.random() * 900000).toString();
@@ -76,6 +77,8 @@ export default function Home() {
         >
           {isCreating ? "start Quiz" : "join Quiz"}
         </Button>
+
+        <Link href={"/auth"} className="underline">Sign-in/Sign-out</Link>
       </Box>
     </Container>
   );
