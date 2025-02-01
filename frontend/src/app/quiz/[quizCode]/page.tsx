@@ -9,8 +9,8 @@ import { fetchUser } from "@/app/lib/user";
 import { API_URL } from "@/app/page";
 
 const QuizPage = () => {
-  const { quizCode } = useParams();
-  const {
+  const { quizCode } = useParams();  /* fetch quiz code from url params */
+  const { /* state management variables and setter functions */
     quiz,
     setQuiz,
     questions,
@@ -35,8 +35,8 @@ const QuizPage = () => {
 
       if (user) {
         try {
-          const token = localStorage.getItem("token")
-          const response = await fetch(`${API_URL}/isHost`, {
+          const token = localStorage.getItem("token")  /* fetch access token from local storage */
+          const response = await fetch(`${API_URL}/isHost`, {    /* check wheter logged in user is host or not */
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -62,22 +62,22 @@ const QuizPage = () => {
   useEffect(() => {
     if (!user || loading) return;
 
-    const socket = getSocket(quizCode as string, isHost);
+    const socket = getSocket(quizCode as string, isHost); /* create socket if not exists or fetch exisiting socket connection to quiz */
     
-    socket.on("init-quiz", (data) => {
-      console.log("init-quiz event:", data);
+    socket.on("init-quiz", (data) => {  /* even listener to get inital quiz data */
+      console.log("init-quiz event:", data); /* host gets basic quiz data with question answers */
      
         setQuiz(data.quizData);
         setQuestions(data.questions)
      
     });
 
-    socket.on("participant-quiz", (data) => {
+    socket.on("participant-quiz", (data) => { /* participant just gets basic quiz data  */
       console.log("participant-quiz event:", data);
       setParticipantQuiz(data);
     });
 
-    socket.on("question-added", async (data) => {
+    socket.on("question-added", async (data) => {  /* the questions added to db are sent here to be stored in state */
       console.log("question received from socket:", data);
       addQuestion(data);
     });

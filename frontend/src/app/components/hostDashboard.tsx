@@ -11,6 +11,8 @@ interface QuestionFromDB {
 }
 
 const HostDashboard = ({ quizCode }: { quizCode: string }) => {
+
+  /* state management variables and setter functions */
   const { quiz, questions, setQuestions, state, setState, resetStore,isClosed,setIsClosed, leaderboard, setLeaderboard  } = useStore();
   const [showAddQuestion, setShowAddQuestion] = useState(false);
   const [uncommittedQuestions, setUncommittedQuestions] = useState<QuestionFromDB[]>([]);
@@ -21,17 +23,17 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
   const socket = getSocket(quizCode, true);
 
   useEffect(() => {
-    socket.on("quiz-ended", () => {
+    socket.on("quiz-ended", () => { /* event listener for quiz ended */
       setState(false);
     });
-    socket.on("quiz-started", () => {
+    socket.on("quiz-started", () => {  /* event listener for quiz start */
       setState(true);
     });
-    socket.on("quiz-closed", () => {
+    socket.on("quiz-closed", () => {/* event listener for quiz closed  */
       setIsClosed(true);
     });
 
-    socket.on("leaderboard-update", (newLeaderboard) => {
+    socket.on("leaderboard-update", (newLeaderboard) => { /* event listener for leaderboard updates */
       console.log("new leaderboard   :::: ",newLeaderboard)
       setLeaderboard(newLeaderboard);
     });
@@ -42,7 +44,7 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
     };
   }, [socket, setState, setIsClosed]);
 
-  const handleStartEndQuiz = () => {
+  const handleStartEndQuiz = () => {  /* notify server about quiz start/end    */
     if (state) {
       socket.emit("end-quiz");
     } else {
@@ -51,7 +53,7 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
   };
 
   const handleCloseQuiz = () => {
-    socket.emit("close-quiz");
+    socket.emit("close-quiz");  /* notify server to close quiz */
   };
 
   console.log("leaderboard in root ::::", leaderboard)
@@ -62,6 +64,8 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
 
       <Stack direction="row" spacing={3} justifyContent="center" sx={{ mt: 2 }}>
         
+
+        {/* leaderboard */}
       <Paper elevation={3} sx={{ p: 2, width: 250 }}>
           <Typography variant="h5">Leaderboard</Typography>
           <List>
@@ -73,11 +77,15 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
           </List>
         </Paper>
 
+
+            {/* active question */}
         <Paper elevation={3} sx={{ p: 2, width: 250 }}>
           <Typography variant="h5">Active Question</Typography>
           <Typography variant="h6">{quiz.activeQuestion?.question || "No active question"}</Typography>
         </Paper>
 
+
+            {/* quiz controls */}
         <Paper elevation={3} sx={{ p: 2, width: 250, textAlign: "center" }}>
   <Typography variant="h5">Quiz Controls</Typography>
 
@@ -113,6 +121,7 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
             </Button>
           ) : (
             <>
+            {/*  add question form */}
               <TextField label="Enter Question" variant="outlined" fullWidth sx={{ my: 2 }} value={newQuestion} onChange={(e) => setNewQuestion(e.target.value)} />
               {newOptions.map((option, index) => (
                 <TextField key={index} label={`Option ${index + 1}`} variant="outlined" fullWidth sx={{ my: 1 }} value={option} onChange={(e) => {
@@ -147,7 +156,7 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
             </>
           )}
 
-        
+        {/* display all added questions */}
           <Paper elevation={3} sx={{ p: 2, mt: 3 }}>
             <Typography variant="h5">All Questions</Typography>
             <List>

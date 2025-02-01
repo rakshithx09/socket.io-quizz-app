@@ -7,6 +7,8 @@ import useStore from "./store/quizStore";
 import Link from "next/link";
 export const API_URL = "http://localhost:3001";
 
+
+/* used to create random 6 digit numeric code */
 const randomGenerator = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 export default function Home() {
@@ -16,12 +18,12 @@ export default function Home() {
   const router = useRouter();
   const { setQuiz } = useStore();
   useEffect(() => {
-    setHydrated(true);
+    setHydrated(true);  /* used to avoid hydration errors in client side rendering */
     setQuizCode(randomGenerator());
   }, []);
 
   const toggle = () => {
-    setIsCreating((prev) => !prev);
+    setIsCreating((prev) => !prev); /* change between create and join quiz */
     setQuizCode(!isCreating ? randomGenerator() : "");
   };
   if (!hydrated) return null;

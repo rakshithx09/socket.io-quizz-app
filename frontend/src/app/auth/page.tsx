@@ -8,8 +8,12 @@ export default function SignIn() {
     const [token, setToken] = useState("");
     const router = useRouter()
     const handleSignIn = async () => {
+
+        /* firebase sign in function */
         signInWithPopup(auth, provider).then(async (data) => {
             const token = await data.user.getIdToken()
+
+            /* store access token and email in browser local storage */
             localStorage.setItem("email", data.user.uid as string);
             localStorage.setItem("token", token );
             setToken(token)
@@ -18,7 +22,10 @@ export default function SignIn() {
 
     }
     const handleSignOut = async () => {
+        /* firebase sign out function */
         signOut(auth).then(() => {
+
+            /* rempve access token from browser local storage  */
             localStorage.removeItem("token")
             setToken("")
             console.log("Signed out succesfully")

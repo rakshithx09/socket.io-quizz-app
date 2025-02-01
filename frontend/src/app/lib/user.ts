@@ -1,5 +1,7 @@
 import { API_URL } from "../page";
 
+
+/* fetches full details of logged in user from database based on the access token stored in browsers local storage */
 export const fetchUser = async () => {
   try {
     const token = localStorage.getItem("token");
@@ -7,7 +9,9 @@ export const fetchUser = async () => {
       console.error(" token not found in localStorage");
       return null;
     }
-
+/* endpoint to fetch user  
+        input: access token in header,
+    */
     const response = await fetch(`${API_URL}/get-user`, {
       method: "GET",
       headers: {
