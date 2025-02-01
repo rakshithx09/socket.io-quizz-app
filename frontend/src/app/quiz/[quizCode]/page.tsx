@@ -20,15 +20,17 @@ const QuizPage = () => {
     setIsHost,
     participantQuiz,
     setParticipantQuiz,
+    setUser,
+    user
   } = useStore();
-
-  const [user, setUser] = useState(null);
+/* 
+  const [user, setUser] = useState(null); */
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchAndSetUser = async () => {
       const user = await fetchUser();
-      console.log("User:", user);
+      /* console.log("User:", user); */
       setUser(user);
 
       if (user) {

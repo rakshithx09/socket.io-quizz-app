@@ -4,12 +4,22 @@ import useStore from "../store/quizStore";
 import { getSocket } from "@/app/store/socketStore";
 
 const ParticipantDashboard = ({ quizCode }: { quizCode: string }) => {
-  const { currentQuestion, setCurrentQuestion, state, setState, resetStore, isClosed, setIsClosed } = useStore();
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [timeLeft, setTimeLeft] = useState<number | null>(null); 
+  const { currentQuestion, setCurrentQuestion, state, setState, isClosed, setIsClosed, user } = useStore();
+  const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [submission, setSubmission] = useState<{ qid: string; quizCode: string; answer: number | null; uid: string } | null>(null);
 
+  const handleAnswer = (option: number | null, socket) => {
+    console.log("index submitting is : ", option);
+    console.log("current question id ---------", currentQuestion);
+    console.log("final submitted data: ", { ...submission, answer: option });
+    socket.emit("submit-answer", { ...submission, answer: option });
+  };
+
+ 
   useEffect(() => {
     const socket = getSocket(quizCode, false);
+    console.log("user from p d: ", user);
 
     socket.on("next-question", (data) => {
       console.log("Current question received from socket: ", data);
@@ -36,20 +46,31 @@ const ParticipantDashboard = ({ quizCode }: { quizCode: string }) => {
       setTimeLeft(data.timeLeft);
     });
 
+    socket.on("time-up", () => {
+      console.log("selected q in time-up -----: ", selectedOption);
+      handleAnswer(selectedOption, socket);
+    });
+
     return () => {
       socket.off("next-question");
       socket.off("quiz-ended");
       socket.off("quiz-started");
       socket.off("quiz-closed");
       socket.off("timer-update");
+      socket.off("time-up");
     };
-  }, [quizCode, setCurrentQuestion, setState, setIsClosed]);
+  }, [quizCode, setCurrentQuestion, setState, setIsClosed, selectedOption, user.uid]); 
 
-  const handleAnswer = (option: string) => {
-    setSelectedOption(option);
-    const socket = getSocket(quizCode, false);
-    socket.emit("submit-answer", { quizCode, answer: option });
-  };
+  useEffect(() => {
+    if (currentQuestion && user) {
+      setSubmission({
+        qid: currentQuestion.id,
+        quizCode,
+        answer: selectedOption,
+        uid: user.uid,
+      });
+    }
+  }, [currentQuestion, selectedOption, quizCode, user]); 
 
   if (!state) return <div>quiz has ended</div>;
   if (isClosed) return <div>quiz has been closed</div>;
@@ -74,7 +95,7 @@ const ParticipantDashboard = ({ quizCode }: { quizCode: string }) => {
             <List>
               {currentQuestion.options?.map((option: string, index: number) => (
                 <ListItem key={index} disablePadding>
-                  <ListItemButton selected={selectedOption === option} onClick={() => handleAnswer(option)}>
+                  <ListItemButton selected={selectedOption === index} onClick={() => { setSelectedOption(index); }}>
                     <ListItemText primary={option} />
                   </ListItemButton>
                 </ListItem>

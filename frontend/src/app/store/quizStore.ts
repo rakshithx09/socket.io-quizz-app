@@ -12,6 +12,11 @@ const useStore = create((set) => ({
   activeIndex: 0,
   isHost:true,
   isClosed: false,
+  user: null,
+
+  submission: null,
+  setSubmission: (submission) => set({ submission }),
+  setUser : (user) => set({ user }),
   setIsClosed : (isClosed) => set({ isClosed }),
   setState : (state) => set({ state }),
   setIsHost : (isHost) => set({ isHost }),
