@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { AuthenticatedRequest } from "../auth";
 import db from "../db";
 
+
+/* handler for /create-quiz route */
 export const createQuizHandler = async (req: AuthenticatedRequest, res: Response) => {
     const { quizCode } = req.body;
     const user = req.user;
@@ -54,6 +56,8 @@ export const createQuizHandler = async (req: AuthenticatedRequest, res: Response
     }
 };
 
+
+/* handler for /join-quiz route */
 export const joinQuizHandler = async (req: AuthenticatedRequest, res: Response) => {
     console.log("joinQuizHandler triggered ")
     const { quizCode } = req.body;

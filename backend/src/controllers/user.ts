@@ -1,6 +1,8 @@
 import { Response } from "express";
 import { AuthenticatedRequest } from "../auth";
 import db from "../db"
+
+/* handler for /get-user route */
 export const getUserHandler = (req: AuthenticatedRequest, res: Response) => {
     console.log(" getUserHandler trigggered")
     res.json({
@@ -9,6 +11,8 @@ export const getUserHandler = (req: AuthenticatedRequest, res: Response) => {
         user: req.user
     })
 }
+
+/* handler for /isHost route */
 export const isHostHandler = async (req: AuthenticatedRequest, res: Response) => {
     try {
         const user = req.user;

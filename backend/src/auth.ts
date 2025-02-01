@@ -9,6 +9,8 @@ export interface AuthenticatedRequest extends Request {
     user?: DecodedIdToken; 
   }
 
+
+/*  middleware to check if user is logged in  */
 export const authMiddleWare = async (req: Request, res: Response, next: NextFunction) => {
 
     console.log("From middleware")

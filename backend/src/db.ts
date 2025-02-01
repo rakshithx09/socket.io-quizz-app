@@ -4,6 +4,7 @@ const prismaClientSingleton = () => {
   return new PrismaClient()
 }
 
+/* singleton pattern to connect to Database */
 declare global {
   var prismaGlobal: undefined | ReturnType<typeof prismaClientSingleton>
 }

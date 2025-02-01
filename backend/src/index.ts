@@ -11,8 +11,9 @@ const app = express();
 app.use(cors());
 const httpServer = createServer(app);
 
-
+ /* initialise websocket server*/
 initWs(httpServer);
+/* initialise http server */
 initHttp(app)
 const port = process.env.PORT || 3001;
 httpServer.listen(port, () => {

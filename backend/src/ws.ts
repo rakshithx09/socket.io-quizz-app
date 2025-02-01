@@ -22,6 +22,8 @@ export const initWs = (httpServer) => {
     });
 
     io.listen(3003);
+
+    /* handler for client connecting to server */
     io.on('connection', async (socket) => {
         try {
             console.log(" connection recv from:", socket.handshake.address);
@@ -36,10 +38,10 @@ export const initWs = (httpServer) => {
 
             if (isHost === "true") {
                 console.log(`client is the host for quiz code: ${quizCode}`);
-                socket.join(`${quizCode}-host`);
+                socket.join(`${quizCode}-host`);   /* host joins a room suffixed with host  */
             } else {
                 socket.join(quizCode);
-                console.log(`${socket.id} joined room ${quizCode}`);
+                console.log(`${socket.id} joined room ${quizCode}`); /* participant joins a room with quizcode as room id  */
             }
             const quizData = await db.quiz.findUnique({
                 where: {
@@ -53,18 +55,21 @@ export const initWs = (httpServer) => {
 
             io.to(`${quizCode}-host`).emit("init-quiz", {
                 quizData,
-                questions
+                questions  /* sending inital quiz data along with question and answers to host */
             })
             io.to(quizCode).emit("participant-quiz", {
-                ...quizData
+                ...quizData /* sending just inital quiz data to participant */
 
             })
 
+            /* listener for start quiz from client */
             socket.on("start-quiz", async () => {
                 try {
                     if (isHost !== "true") return;
 
                     console.log(`starting quiz for ${quizCode}`);
+
+                    /* notify clients that quiz started */
                     io.to(`${quizCode}-host`).emit("quiz-started");
                     io.to(quizCode).emit("quiz-started");
 
@@ -82,20 +87,21 @@ export const initWs = (httpServer) => {
                         where: { quizCode: quizCode as string },
                         data: { state: "active" }
                     });
-
+                    /* time limit */
                     let timeLeft = 10;
-
+                     /*  send active question to participant */
                     await sendNextQuestion(io, quizCode as string, quizState);
 
                     quizState[quizCode as string].timer = setInterval(async () => {
                         if (timeLeft > 0) {
                             timeLeft--;
-                            io.to(quizCode).emit("timer-update", { timeLeft });
+                            io.to(quizCode).emit("timer-update", { timeLeft }); /*  send realtime timer data to participant */
                         } else {
+                            /* alert participant that time is up and ask to submit answer */
                             io.to(quizCode).emit("time-up");
 
-                            quizState[quizCode as string].activeQuestionIndex += 1;
-                            const hasMoreQuestions = await sendNextQuestion(
+                            quizState[quizCode as string].activeQuestionIndex += 1; /* move to next question */
+                            const hasMoreQuestions = await sendNextQuestion( /*  send active question to participant */
                                 io,
                                 quizCode as string,
                                 quizState
@@ -103,6 +109,8 @@ export const initWs = (httpServer) => {
 
                             if (!hasMoreQuestions) {
                                 clearInterval(quizState[quizCode as string].timer!);
+
+                                /* alert clients quiz has ended */
                                 io.to(quizCode).emit("quiz-ended");
                                 io.to(`${quizCode}-host`).emit("quiz-ended");
                             } else {
@@ -116,7 +124,7 @@ export const initWs = (httpServer) => {
                 }
             });
 
-
+            /* listener for end quiz from client */
             socket.on("end-quiz", async () => {
 
                 try {
@@ -133,6 +141,7 @@ export const initWs = (httpServer) => {
                         }
                     })
 
+                    /* alert clients quiz has ended */
                     io.to(quizCode).emit("quiz-ended");
                     io.to(`${quizCode}-host`).emit("quiz-ended");
                 } catch (error) {
@@ -142,7 +151,8 @@ export const initWs = (httpServer) => {
 
 
             })
-
+            
+            /* listener for close from client */
             socket.on("close-quiz", async () => {
                 try {
                     if (isHost !== "true") return;
@@ -163,7 +173,7 @@ export const initWs = (httpServer) => {
                             state: "closed"
                         }
                     });
-
+                    /* alert clients quiz has closed */
                     io.to(quizCode).emit("quiz-closed");
                     io.to(`${quizCode}-host`).emit("quiz-closed");
                 } catch (error) {
@@ -172,12 +182,14 @@ export const initWs = (httpServer) => {
             });
 
 
-
+            /* listener for host adding questions */
             socket.on("submit-questions", async (data) => {
-                addQuestions(data, socket, io);
+                addQuestions(data, socket, io); /*  adding questions to DB */
                 console.log("submitted questions :  ", data)
             })
 
+
+            /* listener for participants submitting answers */
             socket.on("submit-answer", async (data) => {
                 console.log("submission received from : ", data);
                 await handleAnswerSubmission(socket, io, data);

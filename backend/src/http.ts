@@ -9,12 +9,10 @@ import { getUserHandler, isHostHandler } from "./controllers/user";
 export function initHttp(app: Express) {
     app.use(express.json());
     app.use(cors());
-    /* app.get("/",authMiddleWare, (req , res)=>{
-        res.json({ success: true, message: "Access granted",user:  req.user });
-    }) */
+   
 
     app.post("/create-quiz",authMiddleWare,createQuizHandler)
     app.post("/join-quiz",authMiddleWare,joinQuizHandler)
-    app.get("/get-user",authMiddleWare,getUserHandler)
-    app.post("/isHost",authMiddleWare,isHostHandler)
+    app.get("/get-user",authMiddleWare,getUserHandler)  /* route to get logged in user details */
+    app.post("/isHost",authMiddleWare,isHostHandler)     /* route to check if logged in user is host */
 }

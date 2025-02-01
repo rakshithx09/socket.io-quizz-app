@@ -8,6 +8,8 @@ interface Question {
     quizCode: string;
     correctAnswer: number;
 }
+
+
 export const addQuestions = async (questions: Question[], socket: Socket, io) => {
     try {
         if (!questions || questions.length === 0) {
@@ -51,7 +53,7 @@ export const addQuestions = async (questions: Question[], socket: Socket, io) =>
     }
 };
 
-
+/* send next question to participant */
 export async function sendNextQuestion(io: Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>, quizCode: string, quizState: QuizState) {
     const quiz = quizState[quizCode];
     if (!quiz) return false;
@@ -68,6 +70,7 @@ export async function sendNextQuestion(io: Server<DefaultEventsMap, DefaultEvent
 
     if (!question) return false;
 
+     
     io.to(quizCode).emit("next-question", { 
         id: question.id,
         text: question.text,
@@ -79,7 +82,7 @@ export async function sendNextQuestion(io: Server<DefaultEventsMap, DefaultEvent
 }
 
 
-
+/* check if answer is correct when participant submits */
 export const validateAnswer = async ( qid: string, answer: number) => {
     const question = await db.question.findUnique({
         where: { id: qid },
@@ -94,6 +97,7 @@ export const validateAnswer = async ( qid: string, answer: number) => {
     return isCorrect;
 };
 
+/* update leaderboard */
 export const updateLeaderboard = async (quizCode: string) => {
     const quizSessions = await db.quizSession.findMany({
         where: { quizId: quizCode },
@@ -109,7 +113,7 @@ export const updateLeaderboard = async (quizCode: string) => {
     }));
 };
 
-
+/* validate and update leaderboard when answer is submitted */
 export const handleAnswerSubmission = async (
     socket: any,
     io: Server,
@@ -144,6 +148,8 @@ export const handleAnswerSubmission = async (
 
         const leaderboard = await updateLeaderboard(quizId);
         console.log("leaderboard :: ", leaderboard)
+
+        /* broadcast updated leaderboard to all clients */
         io.to(quizCode).emit("leaderboard-update", leaderboard);
         io.to(`${quizCode}-host`).emit("leaderboard-update", leaderboard);
     } catch (error) {
