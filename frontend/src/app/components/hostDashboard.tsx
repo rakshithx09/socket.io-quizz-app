@@ -55,7 +55,6 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
 
       <Stack direction="row" spacing={3} justifyContent="center" sx={{ mt: 2 }}>
         
-        {/* Leaderboard Panel */}
         <Paper elevation={3} sx={{ p: 2, width: 250 }}>
           <Typography variant="h5">Leaderboard</Typography>
           <List>
@@ -67,13 +66,11 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
           </List>
         </Paper>
 
-        {/* Active Question Panel */}
         <Paper elevation={3} sx={{ p: 2, width: 250 }}>
           <Typography variant="h5">Active Question</Typography>
           <Typography variant="h6">{quiz.activeQuestion?.question || "No active question"}</Typography>
         </Paper>
 
-        {/* Quiz Controls Panel */}
         <Paper elevation={3} sx={{ p: 2, width: 250, textAlign: "center" }}>
   <Typography variant="h5">Quiz Controls</Typography>
 
@@ -93,7 +90,6 @@ const HostDashboard = ({ quizCode }: { quizCode: string }) => {
         {state ? "End Quiz" : "Start Quiz"}
       </Button>
 
-      {/* Close Quiz Button */}
       <Button variant="contained" color="secondary" fullWidth sx={{ mt: 2 }} onClick={handleCloseQuiz}>
         Close Quiz
       </Button>

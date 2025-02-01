@@ -63,46 +63,50 @@ export const initWs = (httpServer) => {
             socket.on("start-quiz", async () => {
                 try {
                     if (isHost !== "true") return;
-
-                console.log(`starting quiz for ${quizCode}`);
-                io.to(`${quizCode}-host`).emit("quiz-started")
-                io.to(quizCode).emit("quiz-started")
-
-                const questions = await db.question.findMany({
-                    where: { quizId: quizData?.id }
-                });
-    
-                quizState[quizCode as string] = {
-                    activeQuestionIndex: 0,
-                    questionOrder: questions.map((q) => q.id),
-                    timer: null
-                };
-                console.log("Quiz state :  ", quizState[quizCode as string])
-                await db.quiz.update({
-                    where: {
-                        quizCode: quizCode as string
-                    },
-                    data: {
-                        state: "active"
-                    }
-                })
-                quizState[quizCode  as string].activeQuestionIndex = 0;
-                await sendNextQuestion(io, quizCode as string, quizState);
-
-                quizState[quizCode as string].timer = setInterval(async () => {
-                    quizState[quizCode  as string].activeQuestionIndex += 1;
-                    const hasMoreQuestions = await sendNextQuestion(io, quizCode  as string, quizState);
-
-                    if (!hasMoreQuestions) {
-                        clearInterval(quizState[quizCode as string].timer!);
-                        
-                    }
-                }, 10000); 
+            
+                    console.log(`starting quiz for ${quizCode}`);
+                    io.to(`${quizCode}-host`).emit("quiz-started");
+                    io.to(quizCode).emit("quiz-started");
+            
+                    const questions = await db.question.findMany({
+                        where: { quizId: quizData?.id }
+                    });
+            
+                    quizState[quizCode as string] = {
+                        activeQuestionIndex: 0,
+                        questionOrder: questions.map((q) => q.id),
+                        timer: null
+                    };
+            
+                    await db.quiz.update({
+                        where: { quizCode: quizCode as string },
+                        data: { state: "active" }
+                    });
+            
+                    let timeLeft = 10; 
+            
+                    await sendNextQuestion(io, quizCode as string, quizState);
+            
+                    quizState[quizCode as string].timer = setInterval(async () => {
+                        if (timeLeft > 0) {
+                            timeLeft--;
+                            io.to(quizCode).emit("timer-update", { timeLeft }); 
+                        } else {
+                            quizState[quizCode as string].activeQuestionIndex += 1;
+                            const hasMoreQuestions = await sendNextQuestion(io, quizCode, quizState);
+            
+                            if (!hasMoreQuestions) {
+                                clearInterval(quizState[quizCode as string].timer!);
+                            } else {
+                                timeLeft = 10; 
+                            }
+                        }
+                    }, 1000); 
                 } catch (error) {
-                    console.log(error.message)
+                    console.log(error.message);
                 }
-                
             });
+            
 
             socket.on("end-quiz", async () => {
 
@@ -135,11 +139,11 @@ export const initWs = (httpServer) => {
                     if (isHost !== "true") return;
                     console.log(`closing quiz for ${quizCode}`);
             
-                    if (quizState[quizCode as string]) {  // Ensure quizState exists
+                    if (quizState[quizCode as string]) {  
                         if (quizState[quizCode as string].timer) {
                             clearInterval(quizState[quizCode as string].timer!);
                         }
-                        delete quizState[quizCode as string]; // Clean up quiz state
+                        delete quizState[quizCode as string]; 
                     }
             
                     await db.quiz.update({
